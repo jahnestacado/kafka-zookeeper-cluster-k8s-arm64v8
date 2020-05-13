@@ -1,0 +1,276 @@
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kafka-deployment-1
+spec:
+  selector:
+    matchLabels:
+      app: kafka-1
+  template:
+    metadata:
+      labels:
+        app: kafka-1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - west
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: type
+                operator: In
+                values:
+                - storage
+            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - zookeeper-1
+              topologyKey: kubernetes.io/hostname    
+      containers:
+      - name: kafka1
+        image: zeelos/cp-kafka:5.0.0-arm64v8
+        resources:
+          limits:
+            memory: 384Mi
+          requests:
+            memory: 384Mi
+        ports:
+        - containerPort: 19092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zoo1:2181,zoo2:2181,zoo3:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://kafka-svc-1:19092
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS
+          value: "2"
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "3"
+        - name: KAFKA_HEAP_OPTS
+          value: -Xmx384M -Xms128M
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "48"
+        volumeMounts:
+          - name: kafka-1-mount
+            mountPath: /var/lib/kafka/data
+      volumes:
+        - name: kafka-1-mount
+          hostPath:
+            path: /mnt/shared/kafka-1  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-svc-1
+  labels:
+    app: kafka-1
+spec:
+  ports:
+  - port: 19092
+    protocol: TCP
+  selector:
+    app: kafka-1
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kafka-deployment-2
+spec:
+  selector:
+    matchLabels:
+      app: kafka-2    
+  template:
+    metadata:
+      labels:
+        app: kafka-2
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - central
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: type
+                operator: In
+                values:
+                - storage
+            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - zookeeper-2
+              topologyKey: kubernetes.io/hostname    
+      containers:
+      - name: kafka2
+        image: zeelos/cp-kafka:5.0.0-arm64v8
+        resources:
+          limits:
+            memory: 384Mi
+          requests:
+            memory: 384Mi
+        ports:
+        - containerPort: 19092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "2"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zoo1:2181,zoo2:2181,zoo3:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://kafka-svc-2:19092
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS
+          value: "2"
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "3"
+        - name: KAFKA_HEAP_OPTS
+          value: -Xmx384M -Xms128M
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "48"
+        volumeMounts:
+          - name: kafka-2-mount
+            mountPath: /var/lib/kafka/data
+      volumes:
+        - name: kafka-2-mount
+          hostPath:
+            path: /mnt/shared/kafka-2  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-svc-2
+  labels:
+    app: kafka-2
+spec:
+  ports:
+  - port: 19092
+    protocol: TCP
+  selector:
+    app: kafka-2
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kafka-deployment-3
+spec:
+  selector:
+    matchLabels:
+      app: kafka-3
+  template:
+    metadata:
+      labels:
+        app: kafka-3
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - east
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: type
+                operator: In
+                values:
+                - storage
+            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - zookeeper-3
+              topologyKey: kubernetes.io/hostname    
+      containers:
+      - name: kafka3
+        image: zeelos/cp-kafka:5.0.0-arm64v8
+        resources:
+          limits:
+            memory: 384Mi
+          requests:
+            memory: 384Mi
+        ports:
+        - containerPort: 19092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "3"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zoo1:2181,zoo2:2181,zoo3:2181
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://kafka-svc-3:19092
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS
+          value: "2"
+        - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+          value: "2"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "3"
+        - name: KAFKA_HEAP_OPTS
+          value: -Xmx384M -Xms128M
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "48"
+        volumeMounts:
+          - name: kafka-3-mount
+            mountPath: /var/lib/kafka/data
+      volumes:
+        - name: kafka-3-mount
+          hostPath:
+            path: /mnt/shared/kafka-3  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-svc-3
+  labels:
+    app: kafka-3
+spec:
+  ports:
+  - port: 19092
+    protocol: TCP
+  selector:
+    app: kafka-3

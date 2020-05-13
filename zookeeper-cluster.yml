@@ -1,0 +1,217 @@
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: zookeeper-deployment-1
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper-1    
+  template:
+    metadata:
+      labels:
+        app: zookeeper-1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - west
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kafka-1
+              topologyKey: kubernetes.io/hostname          
+      containers:
+      - name: zoo1
+        image: arm64v8/zookeeper:3.4
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOO_MY_ID
+          value: "1"
+        - name: ZOO_SERVERS
+          value: server.1=0.0.0.0:2888:3888 server.2=zoo2:2888:3888 server.3=zoo3:2888:3888
+        volumeMounts:
+          - name: zookeeper-1-mount
+            mountPath: /data
+      volumes:
+        - name: zookeeper-1-mount
+          hostPath:
+            path: /mnt/shared/zookeeper-1 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zoo1
+  labels:
+    app: zookeeper-1
+spec:
+  ports:
+  - name: client
+    port: 2181
+    protocol: TCP
+  - name: follower
+    port: 2888
+    protocol: TCP
+  - name: leader
+    port: 3888
+    protocol: TCP
+  selector:
+    app: zookeeper-1
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: zookeeper-deployment-2
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper-2 
+  template:
+    metadata:
+      labels:
+        app: zookeeper-2
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - central
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kafka-2
+              topologyKey: kubernetes.io/hostname          
+      containers:
+      - name: zoo2
+        image: arm64v8/zookeeper:3.4
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOO_MY_ID
+          value: "2"
+        - name: ZOO_SERVERS
+          value: server.1=zoo1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zoo3:2888:3888
+        volumeMounts:
+          - name: zookeeper-2-mount
+            mountPath: /data
+      volumes:
+        - name: zookeeper-2-mount
+          hostPath:
+            path: /mnt/shared/zookeeper-2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zoo2
+  labels:
+    app: zookeeper-2
+spec:
+  ports:
+  - name: client
+    port: 2181
+    protocol: TCP
+  - name: follower
+    port: 2888
+    protocol: TCP
+  - name: leader
+    port: 3888
+    protocol: TCP
+  selector:
+    app: zookeeper-2
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: zookeeper-deployment-3
+spec:
+  selector:
+    matchLabels:
+      app: zookeeper-3
+  template:
+    metadata:
+      labels:
+        app: zookeeper-3
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: region
+                operator: In
+                values:
+                - east
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kafka-3
+              topologyKey: kubernetes.io/hostname          
+      containers:
+      - name: zoo3
+        image: arm64v8/zookeeper:3.4
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOO_MY_ID
+          value: "3"
+        - name: ZOO_SERVERS
+          value: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888 server.3=0.0.0.0:2888:3888
+        volumeMounts:
+          - name: zookeeper-3-mount
+            mountPath: /data
+      volumes:
+        - name: zookeeper-3-mount
+          hostPath:
+            path: /mnt/shared/zookeeper-3
+ 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zoo3
+  labels:
+    app: zookeeper-3
+spec:
+  ports:
+  - name: client
+    port: 2181
+    protocol: TCP
+  - name: follower
+    port: 2888
+    protocol: TCP
+  - name: leader
+    port: 3888
+    protocol: TCP
+  selector:
+    app: zookeeper-3
